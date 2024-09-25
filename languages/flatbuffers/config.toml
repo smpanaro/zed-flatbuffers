@@ -1,0 +1,4 @@
+name = "FlatBuffers"
+grammar = "flatbuffers"
+path_suffixes = ["fbs"]
+line_comments = ["// "]
