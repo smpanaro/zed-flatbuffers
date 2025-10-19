@@ -3,14 +3,18 @@
 
 # Features
 - Syntax highlighting
+- Language Server support (go to definition, hovers, diagnostics etc)
 - Outlines for navigating between types
-- Experimental Language Server Protocol support (go to definition etc)
 
-<img width="1028" alt="screenshot of a flatbuffer file in zed" src="https://github.com/user-attachments/assets/b250f291-9bf4-4519-b044-36ea968004fa">
+<img width="1028" alt="screenshot of a flatbuffer file in zed" src="https://github.com/user-attachments/assets/4fa8f97c-f72d-4007-a6ae-ff1f1ff26f1c" />
 
 # Language Server
 
-The extension expects the `flatbuffers-language-server` binary to be available in your system PATH or configured through Zed settings.
+The extension will use the first `flatbuffers-language-server` binary it finds in:
+
+1. Zed settings.json (see below)
+1. Your system PATH
+1. The latest GitHub [release](https://github.com/smpanaro/flatbuffers-language-server/releases)
 
 Example `settings.json`:
 
