@@ -1,6 +1,9 @@
 use std::fs;
 use zed::settings::LspSettings;
-use zed_extension_api::{self as zed, LanguageServerId, Result};
+use zed_extension_api::{
+    self as zed, CodeLabel, CodeLabelSpan, LanguageServerId, Result,
+    lsp::{Completion, CompletionKind, Symbol, SymbolKind},
+};
 
 macro_rules! log {
     // ($($arg:tt)*) => { println!("[flatbuffers-extension] {}", format!($($arg)*)); }; // uncomment for local debugging
@@ -159,6 +162,132 @@ impl zed::Extension for FlatBuffersExtension {
             command: self.language_server_binary_path(language_server_id, worktree)?,
             args: vec![],
             env: Default::default(),
+        })
+    }
+
+    /// Returns the label for the given completion.
+    fn label_for_completion(
+        &self,
+        _language_server_id: &LanguageServerId,
+        completion: Completion,
+    ) -> Option<CodeLabel> {
+        let name = completion.label;
+        let kind = completion.kind?;
+
+        let (code, filter_range, display_range) = match kind {
+            CompletionKind::Class => {
+                let code = format!("table {name} {{}}");
+                let filter_range = 6..6 + name.len();
+                let display_range = 0..filter_range.end;
+                (code, filter_range, display_range)
+            }
+            CompletionKind::Struct => {
+                let code = format!("struct {name} {{}}");
+                let filter_range = 7..7 + name.len();
+                let display_range = 0..filter_range.end;
+                (code, filter_range, display_range)
+            }
+            CompletionKind::Enum => {
+                // Note: v0.0.1 of the language serve incorrectly reports unions as enums.
+                let code = format!("enum {name} : byte {{}}");
+                let filter_range = 5..5 + name.len();
+                let display_range = 0..filter_range.end;
+                (code, filter_range, display_range)
+            }
+            CompletionKind::Interface => {
+                let code = format!("union {name} {{}}");
+                let filter_range = 6..6 + name.len();
+                let display_range = 0..filter_range.end;
+                (code, filter_range, display_range)
+            }
+            CompletionKind::Keyword => {
+                let code = format!("table F {{ f: {name}; }}");
+                let filter_range = 13..13 + name.len();
+                let display_range = filter_range.clone();
+                (code, filter_range, display_range)
+            }
+            CompletionKind::Module => {
+                let code = format!("namespace {name};");
+                let filter_range = 10..10 + name.len();
+                let display_range = 0..filter_range.end;
+                (code, filter_range, display_range)
+            }
+            CompletionKind::Property => {
+                return Some(CodeLabel {
+                    code: name.clone(),
+                    spans: vec![CodeLabelSpan::literal(
+                        name.clone(),
+                        Some("attribute".to_string()),
+                    )],
+                    filter_range: (0..name.len()).into(),
+                });
+            }
+            _ => return None,
+        };
+
+        let label_desc = completion
+            .label_details
+            .and_then(|ld| ld.description)
+            .map(|desc| format!("({desc})"))
+            .unwrap_or_default();
+
+        Some(CodeLabel {
+            code,
+            spans: vec![
+                CodeLabelSpan::code_range(display_range),
+                CodeLabelSpan::literal(" ", None),
+                CodeLabelSpan::literal(label_desc, Some("comment".to_string())), // Second param here comes from highlights.scm
+            ],
+            filter_range: filter_range.into(),
+        })
+    }
+
+    /// Returns the label for the given symbol.
+    fn label_for_symbol(
+        &self,
+        _language_server_id: &LanguageServerId,
+        symbol: Symbol,
+    ) -> Option<CodeLabel> {
+        let name = &symbol.name;
+
+        let (code, filter_range, display_range) = match symbol.kind {
+            SymbolKind::Class => {
+                let code = format!("table {name} {{}}");
+                let filter_range = 6..6 + name.len();
+                let display_range = 0..filter_range.end;
+                (code, filter_range, display_range)
+            }
+            SymbolKind::Struct => {
+                let code = format!("struct {name} {{}}");
+                let filter_range = 7..7 + name.len();
+                let display_range = 0..filter_range.end;
+                (code, filter_range, display_range)
+            }
+            SymbolKind::Enum => {
+                let code = format!("enum {name} : byte {{}}");
+                let filter_range = 5..5 + name.len();
+                let display_range = 0..filter_range.end;
+                (code, filter_range, display_range)
+            }
+            SymbolKind::Interface => {
+                let code = format!("union {name} {{}}");
+                let filter_range = 6..6 + name.len();
+                let display_range = 0..filter_range.end;
+                (code, filter_range, display_range)
+            }
+            SymbolKind::Object => {
+                let code = format!("rpc_service {name} {{ Read(Req): Resp; }}");
+                let filter_range = 12..12 + name.len();
+                let display_range = 0..filter_range.end;
+                (code, filter_range, display_range)
+            }
+            _ => return None,
+        };
+
+        Some(CodeLabel {
+            code,
+            spans: vec![CodeLabelSpan::code_range(display_range)],
+            filter_range: filter_range.into(),
         })
     }
 }
