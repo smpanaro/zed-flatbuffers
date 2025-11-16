@@ -9,7 +9,7 @@ languages = ["languages/flatbuffers"]
 
 [grammars.flatbuffers]
 repository = "https://github.com/smpanaro/tree-sitter-flatbuffers"
-commit = "a95d562355e9ffc30ba5ca36cf77a844bdcb5fb1"
+commit = "2a0d56ecea626baf17a1f8d349e980c04246f343"
 
 [language_servers.flatbuffers-language-server]
 name = "FlatBuffers LSP"
