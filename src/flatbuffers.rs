@@ -17,6 +17,7 @@ struct FlatBuffersExtension {
 }
 
 impl FlatBuffersExtension {
+    #[allow(clippy::too_many_lines)]
     fn language_server_binary_path(
         &mut self,
         language_server_id: &LanguageServerId,
@@ -25,7 +26,7 @@ impl FlatBuffersExtension {
         log!("searching for binary");
         // From $PATH
         if let Some(path) = worktree.which("flatbuffers-language-server") {
-            log!("found binary in PATH: {}", path);
+            log!("found binary in PATH: {path}");
             return Ok(path);
         }
 
@@ -36,16 +37,16 @@ impl FlatBuffersExtension {
             .and_then(|lsp_settings| lsp_settings.binary)
             .and_then(|b| b.path)
         {
-            log!("found binary in settings: {}", path);
+            log!("found binary in settings: {path}");
             return Ok(path);
         }
 
         // From previous download (in this run of the editor?)
-        if let Some(path) = &self.cached_binary_path {
-            if fs::metadata(path).map_or(false, |stat| stat.is_file()) {
-                log!("found cached binary: {}", path);
-                return Ok(path.clone());
-            }
+        if let Some(path) = &self.cached_binary_path
+            && fs::metadata(path).is_ok_and(|stat| stat.is_file())
+        {
+            log!("found cached binary: {path}");
+            return Ok(path.clone());
         }
 
         zed::set_language_server_installation_status(
@@ -60,7 +61,7 @@ impl FlatBuffersExtension {
             },
         )?;
 
-        log!("found release: {:?}", release);
+        log!("found release: {release:?}");
 
         let (platform, arch) = zed::current_platform();
         let file_kind = match platform {
@@ -93,10 +94,7 @@ impl FlatBuffersExtension {
             .iter()
             .find(|asset| asset.name == asset_name)
             .ok_or_else(|| {
-                format!(
-                    "no asset found matching {:?}\n\n{GENERIC_ERROR_MESSAGE}",
-                    asset_name
-                )
+                format!("no asset found matching {asset_name:?}\n\n{GENERIC_ERROR_MESSAGE}")
             })?;
 
         let version_dir_prefix = "flatbuffers-language-server-";
@@ -106,7 +104,7 @@ impl FlatBuffersExtension {
         })?;
         let binary_path = format!("{version_dir}/flatbuffers-language-server");
 
-        if !fs::metadata(&binary_path).map_or(false, |stat| stat.is_file()) {
+        if !fs::metadata(&binary_path).is_ok_and(|stat| stat.is_file()) {
             zed::set_language_server_installation_status(
                 language_server_id,
                 &zed::LanguageServerInstallationStatus::Downloading,
@@ -161,7 +159,7 @@ impl zed::Extension for FlatBuffersExtension {
         Ok(zed::Command {
             command: self.language_server_binary_path(language_server_id, worktree)?,
             args: vec![],
-            env: Default::default(),
+            env: vec![],
         })
     }
 
