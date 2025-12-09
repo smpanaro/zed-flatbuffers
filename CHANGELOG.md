@@ -1,4 +1,4 @@
-## Unreleased
+## 0.0.3 - December 8, 2025
 
 ### Language Server
 - Add syntax highlighting for Project Symbols. Try with: `project symbols: toggle` or ⌘T.
